@@ -1,0 +1,25 @@
+{
+  "name": "lumeo-task",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k \"node --env-file-if-exists=.env server/index.js\" \"vite\"",
+    "dev:api": "node --env-file-if-exists=.env server/index.js",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "better-sqlite3": "13.0.3",
+    "concurrently": "10.0.5",
+    "express": "5.2.1",
+    "lucide-react": "latest",
+    "multer": "2.2.0",
+    "nodemailer": "^9.0.5",
+    "react": "latest",
+    "react-dom": "latest",
+    "typescript": "latest",
+    "vite": "latest"
+  }
+}
