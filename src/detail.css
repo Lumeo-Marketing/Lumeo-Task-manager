@@ -2,6 +2,23 @@
 .task-row:hover, .task-row:focus { background: rgba(255, 253, 249, .7); outline: none; }
 .view-details-button { border: 0; background: transparent; color: #7d766c; font-size: 10px; font-weight: 700; white-space: nowrap; padding: 8px 2px; }
 .view-details-button:hover { color: #b18b20; text-decoration: underline; }
+.aside-note { display: none !important; }
+.file-preview-box { margin-top: 10px; padding: 12px; border: 1px solid #e6dfd4; border-radius: 8px; background: #fffdf9; }
+.file-preview-heading { display: flex; align-items: center; justify-content: space-between; color: #5f584e; font-size: 10px; margin-bottom: 8px; }
+.file-preview-heading span { display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 50%; background: #fed550; color: #242321; font-size: 9px; }
+.file-preview-list { display: grid; gap: 6px; }
+.file-preview-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; background: #f6f1e9; color: #4f4941; font-size: 10px; overflow: hidden; }
+.file-preview-item::before { content: 'FILE'; color: #ad8a2d; font-family: 'DM Mono', monospace; font-size: 8px; }
+.file-preview-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-preview-item small { display: block; margin-top: 2px; color: #978e83; font-size: 8px; }
+.success-overlay { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px; background: rgba(36, 35, 33, .42); }
+.success-modal { width: min(440px, 100%); padding: 34px; border: 1px solid #e6dfd4; border-radius: 16px; background: #fffdf9; text-align: center; box-shadow: 0 24px 70px rgba(36,35,33,.24); animation: success-enter .2s ease-out; }
+.success-icon { width: 54px; height: 54px; display: grid; place-items: center; margin: 0 auto 18px; border-radius: 50%; background: #bfe2cf; color: #397c59; }
+.success-modal .kicker { margin-bottom: 12px; }
+.success-modal h2 { margin: 0; font-size: 23px; letter-spacing: -.7px; }
+.success-modal p:not(.kicker) { margin: 10px 0 24px; color: #807c75; font-size: 12px; line-height: 1.6; }
+.success-modal .primary-button { min-width: 150px; }
+@keyframes success-enter { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 .detail-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
 .back-link { display: inline-flex; align-items: center; gap: 7px; border: 0; background: transparent; color: #777168; font-size: 10px; font-weight: 700; padding: 0; }
 .back-link svg { transform: rotate(180deg); }

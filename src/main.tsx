@@ -76,6 +76,7 @@ function App() {
   const [type, setType] = useState<TaskType>('Video')
   const [mobileNav, setMobileNav] = useState(false)
   const [notice, setNotice] = useState('')
+  const [submissionSuccess, setSubmissionSuccess] = useState(false)
   const pendingCount = tasks.filter((task) => task.status === 'Pending').length
   const visibleTasks = useMemo(() => statusFilter === 'All' ? tasks : tasks.filter((task) => task.status === statusFilter), [statusFilter, tasks])
   const selectedTask = tasks.find((task) => task.id === selectedTaskId)
@@ -92,6 +93,24 @@ function App() {
     window.addEventListener('message', receiveGhlUser)
     return () => window.removeEventListener('message', receiveGhlUser)
   }, [])
+
+  useEffect(() => {
+    const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('.upload-zone input[type="file"]'))
+    const cleanups = inputs.map((input) => {
+      const zone = input.closest('.upload-zone')
+      if (!zone) return () => {}
+      const preview = document.createElement('div')
+      preview.className = 'file-preview-box'
+      zone.parentElement?.appendChild(preview)
+      const updatePreview = () => {
+        const files = Array.from(input.files || [])
+        preview.innerHTML = files.length ? `<div class="file-preview-heading"><strong>Selected files</strong><span>${files.length}</span></div><div class="file-preview-list">${files.map((file) => `<div class="file-preview-item"><span>${file.name}<small>${Math.ceil(file.size / 1024)} KB</small></span></div>`).join('')}</div>` : ''
+      }
+      input.addEventListener('change', updatePreview)
+      return () => { input.removeEventListener('change', updatePreview); preview.remove() }
+    })
+    return () => cleanups.forEach((cleanup) => cleanup())
+  }, [activeView, type])
 
   async function toggleTask(id: number) {
     const task = tasks.find((item) => item.id === id)
@@ -128,7 +147,7 @@ function App() {
     }
     const savedTask = normalizeTask(await response.json())
     setTasks((current) => [savedTask, ...current.filter((task) => task.id !== savedTask.id)])
-    setNotice('Task saved. It is now queued for review.')
+    setSubmissionSuccess(true)
     form.reset()
     window.setTimeout(() => setNotice(''), 4500)
     // Integration boundary: send this payload to your GHL webhook and email service.
@@ -154,6 +173,7 @@ function App() {
         {activeView === 'overview' || activeView === 'mytasks' ? <Overview tasks={visibleTasks} statusFilter={statusFilter} setStatusFilter={setStatusFilter} toggleTask={toggleTask} onNew={() => setActiveView('submit')} onOpen={(id) => { setSelectedTaskId(id); setActiveView('detail') }} userName={userName} myTasks={activeView === 'mytasks'} /> : activeView === 'library' ? <BrandLibrary onBack={() => setActiveView('overview')} /> : activeView === 'detail' && selectedTask ? <TaskDetail task={selectedTask} toggleTask={toggleTask} onBack={() => setActiveView('overview')} /> : <SubmissionForm type={type} setType={setType} onSubmit={submitTask} onCancel={() => setActiveView('overview')} />}
       </main>
       {notice && <div className="toast"><CheckCircle2 size={19} /><span>{notice}</span><button onClick={() => setNotice('')}><X size={16} /></button></div>}
+      {submissionSuccess && <div className="success-overlay" role="dialog" aria-modal="true" aria-labelledby="submission-success-title"><div className="success-modal"><div className="success-icon"><Check size={24} /></div><p className="kicker">Lumeo Task</p><h2 id="submission-success-title">Task submitted successfully for review</h2><p>Your request has been saved and sent to the studio team.</p><button className="primary-button" onClick={() => { setSubmissionSuccess(false); setActiveView('overview') }}>Back to tasks</button></div></div>}
     </div>
   )
 }
@@ -201,6 +221,11 @@ function BrandLibrary({ onBack }: { onBack: () => void }) {
   }
 
   return <section className="page"><div className="page-heading"><div><p className="kicker">Workspace / library</p><h1>Brand library <span>✦</span></h1><p className="subheading">Keep reusable logos, references, and visual assets available for every request.</p></div><button className="secondary-button" onClick={onBack}><ArrowUpRight size={16} /> Back to overview</button></div><div className="library-tabs">{brands.map((item) => <button key={item} className={brand === item ? 'selected' : ''} onClick={() => setBrand(item)}>{item}</button>)}</div><div className="library-toolbar"><div><h2>{brand}</h2><p>{assets.length} saved assets</p></div><label className="primary-button upload-library"><UploadCloud size={17} /> Add assets<input type="file" multiple onChange={uploadAssets} /></label></div><div className="asset-grid">{assets.map((asset) => <a className="asset-card" key={asset.id} href={`/api/brand-assets/${asset.id}/download`} download={asset.originalName}><div className="asset-preview"><FileText size={25} /></div><strong>{asset.originalName}</strong><small>{Math.ceil(asset.size / 1024)} KB · Download</small></a>)}{assets.length === 0 && <div className="empty-library"><FolderOpen size={25} /><h3>No brand assets yet</h3><p>Upload the logos, references, or files your team uses most.</p></div>}</div>{notice && <div className="library-notice">{notice}</div>}</section>
+}
+
+function FileUpload({ hint = 'PNG, JPG, PDF up to 25 MB' }: { hint?: string }) {
+  const [files, setFiles] = useState<File[]>([])
+  return <div className="file-upload-wrap"><label className="upload-zone"><Paperclip size={17} /><span>{files.length ? 'Add more files' : <>Drop files here or <strong>browse</strong></>}</span><small>{hint}</small><input type="file" name="files" multiple onChange={(event) => setFiles(Array.from(event.target.files || []))} /></label>{files.length > 0 && <div className="file-preview-box" aria-live="polite"><div className="file-preview-heading"><strong>Selected files</strong><span>{files.length}</span></div><div className="file-preview-list">{files.map((file) => <div className="file-preview-item" key={`${file.name}-${file.size}`}><FileText size={15} /><span>{file.name}<small>{Math.ceil(file.size / 1024)} KB</small></span></div>)}</div></div>}</div>
 }
 
 function SubmissionForm({ type, setType, onSubmit, onCancel }: { type: TaskType; setType: (type: TaskType) => void; onSubmit: (event: React.FormEvent<HTMLFormElement>) => void; onCancel: () => void }) {
