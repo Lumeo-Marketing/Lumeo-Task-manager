@@ -116,8 +116,16 @@ function App() {
     const formattedDate = date ? new Date(`${date}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : 'Date to be confirmed'
     data.set('type', type)
     data.set('submittedBy', userName)
-    const response = await fetch('/api/tasks', { method: 'POST', body: data })
-    if (!response.ok) return setNotice('Could not save the task. Check that the API is running.')
+    let response: Response
+    try {
+      response = await fetch('/api/tasks', { method: 'POST', body: data })
+    } catch {
+      return setNotice('The task service is unavailable. Please try again in a moment.')
+    }
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: `Request failed (${response.status})` }))
+      return setNotice(error.error || 'Could not save the task.')
+    }
     const savedTask = normalizeTask(await response.json())
     setTasks((current) => [savedTask, ...current.filter((task) => task.id !== savedTask.id)])
     setNotice('Task saved. It is now queued for review.')

@@ -22,6 +22,16 @@ For the API only, use `npm run dev:api`. The local API provides:
 - `GET /api/task-files/:id/download`
 - `GET /api/brand-assets/:id/download`
 
+## Railway deployment
+
+Railway should use the commands in `railway.json`:
+
+- Build: `npm run build`
+- Start: `npm start`
+- Health check: `/api/health`
+
+Set the SMTP variables from `.env.example` in Railway Variables. Do not upload `.env` to the repository. For persistence, attach a Railway Volume and mount it at `/app/data`, because SQLite is file-based.
+
 ## Integrations
 
 Set these environment variables when wiring production services:

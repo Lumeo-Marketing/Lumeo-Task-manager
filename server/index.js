@@ -81,6 +81,11 @@ const upload = multer({
 })
 
 app.use(express.json())
+
+const hasBuiltFrontend = fs.existsSync(path.join(rootDir, 'dist', 'index.html'))
+if (hasBuiltFrontend) {
+  app.use(express.static(path.join(rootDir, 'dist')))
+}
 function taskWithFiles(task) {
   const files = database.prepare('SELECT id, originalName, mimeType, size, createdAt FROM task_files WHERE taskId = ? ORDER BY id').all(task.id)
   return { ...task, files: files.length, attachments: files }
@@ -229,5 +234,15 @@ app.patch('/api/tasks/:id/status', (request, response) => {
   if (!result.changes) return response.status(404).json({ error: 'Task not found' })
   response.json(taskWithFiles(database.prepare('SELECT * FROM tasks WHERE id = ?').get(request.params.id)))
 })
+
+app.use((error, _request, response, _next) => {
+  console.error('API error:', error)
+  if (error instanceof multer.MulterError) return response.status(400).json({ error: error.message })
+  response.status(500).json({ error: error.message || 'Internal server error' })
+})
+
+if (hasBuiltFrontend) {
+  app.get('*splat', (_request, response) => response.sendFile(path.join(rootDir, 'dist', 'index.html')))
+}
 
 app.listen(port, () => console.log(`Lumeo Task API running at http://localhost:${port}`))
