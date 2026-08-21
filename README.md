@@ -30,7 +30,9 @@ Railway should use the commands in `railway.json`:
 - Start: `npm start`
 - Health check: `/api/health`
 
-Set the SMTP variables from `.env.example` in Railway Variables. Do not upload `.env` to the repository. For persistence, attach a Railway Volume and mount it at `/app/data`, because SQLite is file-based.
+Set `DATA_DIR=/app/data` and the SMTP variables from `.env.example` in Railway Variables. Attach a Railway Volume mounted at `/app/data`. The server logs the active SQLite path at startup. Do not upload `.env` to the repository. SQLite is file-based, so a Volume is required for data to survive redeploys.
+
+The previous deployment used the ephemeral application filesystem, so its old SQLite data cannot be recovered from the new deployment unless Railway has a backup or the previous filesystem is still available. After attaching the Volume, verify the deploy log says `using database /app/data/lumeo-task.sqlite`.
 
 ## Integrations
 

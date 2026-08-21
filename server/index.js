@@ -8,7 +8,7 @@ import nodemailer from 'nodemailer'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.resolve(__dirname, '..')
-const dataDir = path.join(rootDir, 'data')
+const dataDir = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(rootDir, 'data')
 fs.mkdirSync(dataDir, { recursive: true })
 
 const database = new Database(path.join(dataDir, 'lumeo-task.sqlite'))
@@ -146,7 +146,7 @@ async function notifyTask(taskId) {
   return { status: 'sent', recipient: recipientFor(task.type) }
 }
 
-app.get('/api/health', (_request, response) => response.json({ ok: true }))
+app.get('/api/health', (_request, response) => response.json({ ok: true, databasePath: path.join(dataDir, 'lumeo-task.sqlite') }))
 app.get('/api/tasks', (_request, response) => {
   const tasks = database.prepare('SELECT * FROM tasks ORDER BY createdAt DESC').all().map(taskWithFiles)
   response.json(tasks)
@@ -245,4 +245,4 @@ if (hasBuiltFrontend) {
   app.get('*splat', (_request, response) => response.sendFile(path.join(rootDir, 'dist', 'index.html')))
 }
 
-app.listen(port, () => console.log(`Lumeo Task API running at http://localhost:${port}`))
+app.listen(port, () => console.log(`Lumeo Task API running at http://localhost:${port} using database ${path.join(dataDir, 'lumeo-task.sqlite')}`))
