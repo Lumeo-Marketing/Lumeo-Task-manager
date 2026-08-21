@@ -45,7 +45,18 @@ type BrandAsset = { id: number; brand: string; originalName: string; mimeType: s
 type AppView = 'overview' | 'submit' | 'mytasks' | 'library' | 'detail'
 
 const taskTypes: TaskType[] = ['Video', 'Online Poster / Flyer', 'Print Poster / Flyer', 'Web development', 'SEO', 'Website update']
-const brands = ['Twinkle autism', 'Twinkle pedsych', 'Twinkle little star']
+const brands = [
+  'Blue Hippo HVAC & Restaurant Repair',
+  'HerSpace Mental Wellness',
+  'Lumeo Marketing',
+  'Modello Construction',
+  'Red Berry insurance',
+  'Twinkle Autism',
+  'Twinkle Healthcare',
+  'Twinkle little star',
+  'Twinkle Ped Psych',
+  'Windcrest Pediatric Dentistry',
+]
 
 const embeddedUserName = new URLSearchParams(window.location.search).get('name')?.trim()
   || new URLSearchParams(window.location.search).get('contactName')?.trim()
@@ -57,6 +68,13 @@ function initials(name: string) {
 
 function todayLabel() {
   return new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date())
+}
+
+function timeBasedGreeting() {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
 }
 
 function normalizeTask(task: ApiTask): Task {
@@ -185,7 +203,14 @@ function App() {
 
 function Overview({ tasks, statusFilter, setStatusFilter, toggleTask, onNew, onOpen, userName, myTasks }: { tasks: Task[]; statusFilter: 'All' | TaskStatus; setStatusFilter: (filter: 'All' | TaskStatus) => void; toggleTask: (id: number) => void; onNew: () => void; onOpen: (id: number) => void; userName: string; myTasks: boolean }) {
   const completed = tasks.filter((task) => task.status === 'Completed').length
-  return <section className="page"><div className="page-heading"><div><p className="kicker">{todayLabel()}</p><h1>{myTasks ? 'My tasks' : `Good morning, ${userName.split(' ')[0]}`} <span>✦</span></h1><p className="subheading">{myTasks ? 'Everything currently assigned to you is collected here.' : 'Keep the good work moving. Here’s what’s on the Lumeo team desk.'}</p></div><button className="primary-button" onClick={onNew}><Plus size={18} /> New request</button></div>
+  const [greeting, setGreeting] = useState(timeBasedGreeting)
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setGreeting(timeBasedGreeting()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  return <section className="page"><div className="page-heading"><div><p className="kicker">{todayLabel()}</p><h1>{myTasks ? 'My tasks' : `${greeting}, ${userName.split(' ')[0]}`} <span>✦</span></h1><p className="subheading">{myTasks ? 'Everything currently assigned to you is collected here.' : 'Keep the good work moving. Here’s what’s on the Lumeo team desk.'}</p></div><button className="primary-button" onClick={onNew}><Plus size={18} /> New request</button></div>
     <div className="stat-grid"><div className="stat-card yellow"><div className="stat-icon"><Clock3 size={19} /></div><span>In progress</span><strong>06</strong><small>+2 this week</small></div><div className="stat-card coral"><div className="stat-icon"><Send size={18} /></div><span>Awaiting review</span><strong>03</strong><small>1 needs attention</small></div><div className="stat-card mint"><div className="stat-icon"><CheckCircle2 size={19} /></div><span>Completed this month</span><strong>{String(completed + 11).padStart(2, '0')}</strong><small>+18% from July</small></div><div className="stat-card dark"><div className="stat-icon"><Zap size={18} /></div><span>Avg. turnaround</span><strong>2.4<span>d</span></strong><small>Down from 3.1d</small></div></div>
     <div className="section-heading"><div><h2>Task overview</h2><p>Keep an eye on every active request.</p></div><button className="text-button">View all <ArrowUpRight size={15} /></button></div>
     <div className="filter-row"><div className="segmented"><button className={statusFilter === 'All' ? 'selected' : ''} onClick={() => setStatusFilter('All')}>All <span>09</span></button><button className={statusFilter === 'Pending' ? 'selected' : ''} onClick={() => setStatusFilter('Pending')}>Pending <span>06</span></button><button className={statusFilter === 'Completed' ? 'selected' : ''} onClick={() => setStatusFilter('Completed')}>Completed <span>03</span></button></div><button className="filter-button"><CalendarDays size={15} /> Sort: Due date <ChevronDown size={14} /></button></div>
