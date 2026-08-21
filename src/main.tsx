@@ -55,6 +55,10 @@ function initials(name: string) {
   return name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()
 }
 
+function todayLabel() {
+  return new Intl.DateTimeFormat('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(new Date())
+}
+
 function normalizeTask(task: ApiTask): Task {
   const dueDate = task.firstSubmissionDate ? new Date(`${task.firstSubmissionDate}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : 'Date to be confirmed'
   return { ...task, dueDate, files: task.attachments?.length ?? task.files ?? 0 }
@@ -181,7 +185,7 @@ function App() {
 
 function Overview({ tasks, statusFilter, setStatusFilter, toggleTask, onNew, onOpen, userName, myTasks }: { tasks: Task[]; statusFilter: 'All' | TaskStatus; setStatusFilter: (filter: 'All' | TaskStatus) => void; toggleTask: (id: number) => void; onNew: () => void; onOpen: (id: number) => void; userName: string; myTasks: boolean }) {
   const completed = tasks.filter((task) => task.status === 'Completed').length
-  return <section className="page"><div className="page-heading"><div><p className="kicker">Thursday, August 20, 2026</p><h1>{myTasks ? 'My tasks' : `Good morning, ${userName.split(' ')[0]}`} <span>✦</span></h1><p className="subheading">{myTasks ? 'Everything currently assigned to you is collected here.' : 'Keep the good work moving. Here’s what’s on the Lumeo team desk.'}</p></div><button className="primary-button" onClick={onNew}><Plus size={18} /> New request</button></div>
+  return <section className="page"><div className="page-heading"><div><p className="kicker">{todayLabel()}</p><h1>{myTasks ? 'My tasks' : `Good morning, ${userName.split(' ')[0]}`} <span>✦</span></h1><p className="subheading">{myTasks ? 'Everything currently assigned to you is collected here.' : 'Keep the good work moving. Here’s what’s on the Lumeo team desk.'}</p></div><button className="primary-button" onClick={onNew}><Plus size={18} /> New request</button></div>
     <div className="stat-grid"><div className="stat-card yellow"><div className="stat-icon"><Clock3 size={19} /></div><span>In progress</span><strong>06</strong><small>+2 this week</small></div><div className="stat-card coral"><div className="stat-icon"><Send size={18} /></div><span>Awaiting review</span><strong>03</strong><small>1 needs attention</small></div><div className="stat-card mint"><div className="stat-icon"><CheckCircle2 size={19} /></div><span>Completed this month</span><strong>{String(completed + 11).padStart(2, '0')}</strong><small>+18% from July</small></div><div className="stat-card dark"><div className="stat-icon"><Zap size={18} /></div><span>Avg. turnaround</span><strong>2.4<span>d</span></strong><small>Down from 3.1d</small></div></div>
     <div className="section-heading"><div><h2>Task overview</h2><p>Keep an eye on every active request.</p></div><button className="text-button">View all <ArrowUpRight size={15} /></button></div>
     <div className="filter-row"><div className="segmented"><button className={statusFilter === 'All' ? 'selected' : ''} onClick={() => setStatusFilter('All')}>All <span>09</span></button><button className={statusFilter === 'Pending' ? 'selected' : ''} onClick={() => setStatusFilter('Pending')}>Pending <span>06</span></button><button className={statusFilter === 'Completed' ? 'selected' : ''} onClick={() => setStatusFilter('Completed')}>Completed <span>03</span></button></div><button className="filter-button"><CalendarDays size={15} /> Sort: Due date <ChevronDown size={14} /></button></div>
