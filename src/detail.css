@@ -3,6 +3,8 @@
 .view-details-button { border: 0; background: transparent; color: #7d766c; font-size: 10px; font-weight: 700; white-space: nowrap; padding: 8px 2px; }
 .view-details-button:hover { color: #b18b20; text-decoration: underline; }
 .aside-note { display: none !important; }
+.form-help strong { font-size: 0; }
+.form-help strong::after { content: 'Chat with Lumeo team'; font-size: 10px; }
 .file-preview-box { margin-top: 10px; padding: 12px; border: 1px solid #e6dfd4; border-radius: 8px; background: #fffdf9; }
 .file-preview-heading { display: flex; align-items: center; justify-content: space-between; color: #5f584e; font-size: 10px; margin-bottom: 8px; }
 .file-preview-heading span { display: grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 50%; background: #fed550; color: #242321; font-size: 9px; }
