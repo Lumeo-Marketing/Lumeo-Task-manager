@@ -48,3 +48,62 @@
 .empty-attachments { color: var(--muted); font-size: 10px; }
 @media (max-width: 900px) { .detail-grid { grid-template-columns: 1fr; } }
 @media (max-width: 680px) { .detail-heading { align-items: start; flex-direction: column; }.detail-card { padding: 18px; } }
+
+/* Readable typography scale across the dashboard, forms, library, and detail views. */
+body { font-size: 15px; }
+.workspace-switcher strong, .profile strong { font-size: 14px; }
+.workspace-switcher small, .profile small { font-size: 12px; }
+.workspace-avatar, .profile-avatar, .top-avatar { font-size: 13px; }
+.sidebar button { font-size: 14px; }
+.nav-count { font-size: 12px; }
+.eyebrow, .kicker { font-size: 11px; }
+.crumb { font-size: 13px; }
+.page h1 { font-size: clamp(32px, 3.4vw, 44px); }
+.page h1 span { font-size: 28px; }
+.subheading { font-size: 15px; line-height: 1.6; }
+.primary-button, .secondary-button, .complete-button, .filter-button, .text-button { font-size: 13px; }
+.stat-card span:not(.stat-icon) { font-size: 13px; }
+.stat-card strong { font-size: 31px; }
+.stat-card strong span { font-size: 16px; }
+.stat-card small { font-size: 12px; }
+.section-heading h2 { font-size: 20px; }
+.section-heading p { font-size: 14px; }
+.segmented button, .filter-button { font-size: 13px; }
+.task-title-line h3 { font-size: 15px; }
+.task-main p { font-size: 13px; line-height: 1.5; }
+.status-pill, .task-meta { font-size: 12px; }
+.form-help, .form-help strong::after { font-size: 13px; }
+.number { font-size: 12px; }
+.block-heading h2, .upload-card h3 { font-size: 17px; }
+.block-heading p, .upload-card p { font-size: 13px; }
+.type-card { font-size: 13px; }
+.field span { font-size: 13px; }
+.field input, .field textarea, .field select { font-size: 14px; line-height: 1.5; }
+.upload-zone { font-size: 13px; }
+.upload-zone small { font-size: 11px; }
+.toast { font-size: 14px; }
+.library-tabs button { font-size: 13px; }
+.library-toolbar h2 { font-size: 19px; }
+.library-toolbar p, .empty-library p, .library-notice { font-size: 13px; }
+.asset-card strong { font-size: 13px; }
+.asset-card small { font-size: 12px; }
+.empty-library h3 { font-size: 16px; }
+.view-details-button, .back-link { font-size: 13px; }
+.file-preview-heading, .file-preview-item { font-size: 13px; }
+.file-preview-heading span { font-size: 12px; }
+.file-preview-item::before, .file-preview-item small { font-size: 11px; }
+.success-modal h2 { font-size: 27px; }
+.success-modal p:not(.kicker) { font-size: 15px; }
+.detail-card h2 { font-size: 17px; }
+.detail-card-heading p { font-size: 13px; }
+.detail-field span { font-size: 12px; }
+.detail-field p { font-size: 14px; }
+.timeline-row span { font-size: 12px; }
+.timeline-row strong, .attachment-link, .empty-attachments { font-size: 13px; }
+.attachment-link small { font-size: 11px; }
+
+@media (max-width: 680px) {
+  .page h1 { font-size: 31px; }
+  .stat-card strong { font-size: 28px; }
+  .crumb { font-size: 12px; }
+}
