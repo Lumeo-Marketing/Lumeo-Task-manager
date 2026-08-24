@@ -107,3 +107,5 @@ body { font-size: 15px; }
   .stat-card strong { font-size: 28px; }
   .crumb { font-size: 12px; }
 }
+.sidebar-v2-location .hl_wrapper.notification-banner-wrapper {
+    padding-top: 3rem !important;}
