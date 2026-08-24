@@ -58,9 +58,11 @@ const brands = [
   'Windcrest Pediatric Dentistry',
 ]
 
-const embeddedUserName = new URLSearchParams(window.location.search).get('name')?.trim()
-  || new URLSearchParams(window.location.search).get('contactName')?.trim()
-  || 'Tommy Gogd'
+const urlParams = new URLSearchParams(window.location.search)
+const embeddedUserName = urlParams.get('firstName')?.trim()
+  || urlParams.get('name')?.trim()
+  || urlParams.get('contactName')?.trim()
+  || ''
 
 function initials(name: string) {
   return name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()
@@ -75,6 +77,18 @@ function timeBasedGreeting() {
   if (hour < 12) return 'Good morning'
   if (hour < 18) return 'Good afternoon'
   return 'Good evening'
+}
+
+function WelcomeMessage({ firstName: fallbackFirstName }: { firstName?: string }) {
+  const firstName = new URLSearchParams(window.location.search).get('firstName')?.trim() || fallbackFirstName
+  const [greeting, setGreeting] = useState(timeBasedGreeting)
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setGreeting(timeBasedGreeting()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
+
+  return <h1>{greeting}{firstName ? `, ${firstName}` : ''} <span>✦</span></h1>
 }
 
 function normalizeTask(task: ApiTask): Task {
@@ -108,8 +122,8 @@ function App() {
   }, [])
 
   useEffect(() => {
-    function receiveGhlUser(event: MessageEvent<{ name?: string; contactName?: string; user?: { name?: string } }>) {
-      const nextName = event.data?.name?.trim() || event.data?.contactName?.trim() || event.data?.user?.name?.trim()
+    function receiveGhlUser(event: MessageEvent<{ firstName?: string; name?: string; contactName?: string; user?: { firstName?: string; name?: string } }>) {
+      const nextName = event.data?.firstName?.trim() || event.data?.user?.firstName?.trim() || event.data?.name?.trim() || event.data?.contactName?.trim() || event.data?.user?.name?.trim()
       if (nextName) setUserName(nextName)
     }
     window.addEventListener('message', receiveGhlUser)
@@ -188,11 +202,11 @@ function App() {
           <button className={activeView === 'mytasks' ? 'active' : ''} onClick={() => { setActiveView('mytasks'); setStatusFilter('Pending'); setMobileNav(false) }}><ListTodo size={18} /> My tasks <span className="nav-count">{pendingCount}</span></button>
         </nav>
         <div className="sidebar-section"><p className="eyebrow">Workspace</p><button onClick={() => { setActiveView('overview'); setSelectedTaskId(null); setStatusFilter('All'); setMobileNav(false) }}><FolderOpen size={17} /> All requests</button><button onClick={() => { setActiveView('library'); setSelectedTaskId(null); setMobileNav(false) }}><Grid2X2 size={17} /> Brand library</button></div>
-        <div className="sidebar-bottom"><button><CircleHelp size={17} /> Help center</button><button><Settings size={17} /> Settings</button><div className="profile"><span className="profile-avatar">{initials(userName)}</span><span><strong>{userName}</strong><small>GHL contact</small></span><MoreHorizontal size={18} /></div></div>
+        <div className="sidebar-bottom"><button><CircleHelp size={17} /> Help center</button><button><Settings size={17} /> Settings</button><div className="profile"><span className="profile-avatar">{initials(userName || 'GHL user')}</span><span><strong>{userName || 'GHL user'}</strong><small>GHL contact</small></span><MoreHorizontal size={18} /></div></div>
       </aside>
       {mobileNav && <button className="scrim" aria-label="Close navigation" onClick={() => setMobileNav(false)} />}
       <main className="main-content">
-        <header className="topbar"><button className="icon-button mobile-menu" onClick={() => setMobileNav(true)} aria-label="Open navigation"><Menu size={20} /></button><div className="crumb"><span>Workspace</span><ArrowUpRight size={13} /><strong>{activeView === 'submit' ? 'Submit a request' : activeView === 'mytasks' ? 'My tasks' : activeView === 'library' ? 'Brand library' : activeView === 'detail' ? selectedTask?.title || 'Task details' : 'Overview'}</strong></div><div className="top-actions"><button className="icon-button" aria-label="Search"><Search size={18} /></button><button className="icon-button notification" aria-label="Notifications"><Bell size={18} /><i /></button><div className="top-avatar">{initials(userName)}</div></div></header>
+        <header className="topbar"><button className="icon-button mobile-menu" onClick={() => setMobileNav(true)} aria-label="Open navigation"><Menu size={20} /></button><div className="crumb"><span>Workspace</span><ArrowUpRight size={13} /><strong>{activeView === 'submit' ? 'Submit a request' : activeView === 'mytasks' ? 'My tasks' : activeView === 'library' ? 'Brand library' : activeView === 'detail' ? selectedTask?.title || 'Task details' : 'Overview'}</strong></div><div className="top-actions"><button className="icon-button" aria-label="Search"><Search size={18} /></button><button className="icon-button notification" aria-label="Notifications"><Bell size={18} /><i /></button><div className="top-avatar">{initials(userName || 'GHL user')}</div></div></header>
         {activeView === 'overview' || activeView === 'mytasks' ? <Overview tasks={visibleTasks} statusFilter={statusFilter} setStatusFilter={setStatusFilter} toggleTask={toggleTask} onNew={() => setActiveView('submit')} onOpen={(id) => { setSelectedTaskId(id); setActiveView('detail') }} userName={userName} myTasks={activeView === 'mytasks'} /> : activeView === 'library' ? <BrandLibrary onBack={() => setActiveView('overview')} /> : activeView === 'detail' && selectedTask ? <TaskDetail task={selectedTask} toggleTask={toggleTask} onBack={() => setActiveView('overview')} /> : <SubmissionForm type={type} setType={setType} onSubmit={submitTask} onCancel={() => setActiveView('overview')} />}
       </main>
       {notice && <div className="toast"><CheckCircle2 size={19} /><span>{notice}</span><button onClick={() => setNotice('')}><X size={16} /></button></div>}
@@ -203,14 +217,7 @@ function App() {
 
 function Overview({ tasks, statusFilter, setStatusFilter, toggleTask, onNew, onOpen, userName, myTasks }: { tasks: Task[]; statusFilter: 'All' | TaskStatus; setStatusFilter: (filter: 'All' | TaskStatus) => void; toggleTask: (id: number) => void; onNew: () => void; onOpen: (id: number) => void; userName: string; myTasks: boolean }) {
   const completed = tasks.filter((task) => task.status === 'Completed').length
-  const [greeting, setGreeting] = useState(timeBasedGreeting)
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setGreeting(timeBasedGreeting()), 60_000)
-    return () => window.clearInterval(timer)
-  }, [])
-
-  return <section className="page"><div className="page-heading"><div><p className="kicker">{todayLabel()}</p><h1>{myTasks ? 'My tasks' : `${greeting}, ${userName.split(' ')[0]}`} <span>✦</span></h1><p className="subheading">{myTasks ? 'Everything currently assigned to you is collected here.' : 'Keep the good work moving. Here’s what’s on the Lumeo team desk.'}</p></div><button className="primary-button" onClick={onNew}><Plus size={18} /> New request</button></div>
+  return <section className="page"><div className="page-heading"><div><p className="kicker">{todayLabel()}</p>{myTasks ? <h1>My tasks <span>✦</span></h1> : <WelcomeMessage firstName={userName.split(' ')[0]} />}<p className="subheading">{myTasks ? 'Everything currently assigned to you is collected here.' : 'Keep the good work moving. Here’s what’s on the Lumeo team desk.'}</p></div><button className="primary-button" onClick={onNew}><Plus size={18} /> New request</button></div>
     <div className="stat-grid"><div className="stat-card yellow"><div className="stat-icon"><Clock3 size={19} /></div><span>In progress</span><strong>06</strong><small>+2 this week</small></div><div className="stat-card coral"><div className="stat-icon"><Send size={18} /></div><span>Awaiting review</span><strong>03</strong><small>1 needs attention</small></div><div className="stat-card mint"><div className="stat-icon"><CheckCircle2 size={19} /></div><span>Completed this month</span><strong>{String(completed + 11).padStart(2, '0')}</strong><small>+18% from July</small></div><div className="stat-card dark"><div className="stat-icon"><Zap size={18} /></div><span>Avg. turnaround</span><strong>2.4<span>d</span></strong><small>Down from 3.1d</small></div></div>
     <div className="section-heading"><div><h2>Task overview</h2><p>Keep an eye on every active request.</p></div><button className="text-button">View all <ArrowUpRight size={15} /></button></div>
     <div className="filter-row"><div className="segmented"><button className={statusFilter === 'All' ? 'selected' : ''} onClick={() => setStatusFilter('All')}>All <span>09</span></button><button className={statusFilter === 'Pending' ? 'selected' : ''} onClick={() => setStatusFilter('Pending')}>Pending <span>06</span></button><button className={statusFilter === 'Completed' ? 'selected' : ''} onClick={() => setStatusFilter('Completed')}>Completed <span>03</span></button></div><button className="filter-button"><CalendarDays size={15} /> Sort: Due date <ChevronDown size={14} /></button></div>
