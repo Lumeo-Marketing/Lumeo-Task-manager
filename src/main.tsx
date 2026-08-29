@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useMemo, useState } from 'react'
+import { StrictMode, useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
   ArrowUpRight, Bell, BriefcaseBusiness, CalendarDays, Check, CheckCircle2,
@@ -9,9 +9,11 @@ import {
 } from 'lucide-react'
 import './styles.css'
 import './detail.css'
+import CompletionModal from './CompletionModal'
+import ReviewPage from './ReviewPage'
 
 type TaskType = 'Video' | 'Online Poster / Flyer' | 'Print Poster / Flyer' | 'Web development' | 'SEO' | 'Website update'
-type TaskStatus = 'Pending' | 'Completed'
+type TaskStatus = 'Pending' | 'Under review' | 'Completed'
 
 type Task = {
   id: number
@@ -27,6 +29,8 @@ type Task = {
   submittedBy?: string
   createdAt?: string
   completedAt?: string | null
+  reviewerName?: string
+  reviewerEmail?: string
   objective?: string
   script?: string
   copy?: string
@@ -37,6 +41,7 @@ type Task = {
   visualElements?: string
   technicalNotes?: string
   attachments?: Array<{ id: number; originalName: string; mimeType?: string; size: number }>
+  latestReview?: { id: number; message: string; status: string; correctionComment?: string; createdAt: string; decidedAt?: string } | null
 }
 
 type ApiTask = Task & { firstSubmissionDate: string; attachments?: Array<{ id: number; originalName: string; mimeType?: string; size: number }> }
@@ -63,6 +68,7 @@ const embeddedUserName = urlParams.get('firstName')?.trim()
   || urlParams.get('name')?.trim()
   || urlParams.get('contactName')?.trim()
   || ''
+const reviewToken = window.location.pathname.match(/^\/review\/([a-f0-9]+)\/?$/i)?.[1] || ''
 
 function initials(name: string) {
   return name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase()
@@ -96,25 +102,20 @@ function normalizeTask(task: ApiTask): Task {
   return { ...task, dueDate, files: task.attachments?.length ?? task.files ?? 0 }
 }
 
-const starterTasks: Task[] = [
-  { id: 1, title: 'Back to school social reel', type: 'Video', brand: 'Twinkle autism', description: 'A warm, energetic 30-second reel for the August enrollment push.', dueDate: 'Aug 28, 2026', status: 'Pending', files: 4 },
-  { id: 2, title: 'Parent workshop flyer', type: 'Print Poster / Flyer', brand: 'Twinkle pedsych', description: 'Promote the fall parent workshop series across clinic locations.', dueDate: 'Aug 25, 2026', status: 'Pending', files: 2 },
-  { id: 3, title: 'Therapy services landing page', type: 'Web development', brand: 'Twinkle little star', description: 'New service page with clear pathways for families to get started.', dueDate: 'Sep 02, 2026', status: 'Pending', files: 1 },
-  { id: 4, title: 'August newsletter refresh', type: 'Website update', brand: 'Twinkle autism', description: 'Update the existing newsletter layout and swap in the new announcements.', dueDate: 'Aug 19, 2026', status: 'Completed', files: 3 },
-]
-
 function App() {
   const [activeView, setActiveView] = useState<AppView>('overview')
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null)
   const [userName, setUserName] = useState(embeddedUserName)
-  const [tasks, setTasks] = useState(starterTasks)
+  const [tasks, setTasks] = useState<Task[]>([])
   const [statusFilter, setStatusFilter] = useState<'All' | TaskStatus>('All')
   const [type, setType] = useState<TaskType>('Video')
   const [mobileNav, setMobileNav] = useState(false)
   const [notice, setNotice] = useState('')
   const [submissionSuccess, setSubmissionSuccess] = useState(false)
-  const pendingCount = tasks.filter((task) => task.status === 'Pending').length
-  const visibleTasks = useMemo(() => statusFilter === 'All' ? tasks : tasks.filter((task) => task.status === statusFilter), [statusFilter, tasks])
+  const [completionTask, setCompletionTask] = useState<Task | null>(null)
+  const submittingRef = useRef(false)
+  const pendingCount = tasks.filter((task) => task.status !== 'Completed').length
+  const visibleTasks = useMemo(() => statusFilter === 'All' ? tasks : statusFilter === 'Pending' ? tasks.filter((task) => task.status !== 'Completed') : tasks.filter((task) => task.status === statusFilter), [statusFilter, tasks])
   const selectedTask = tasks.find((task) => task.id === selectedTaskId)
 
   useEffect(() => {
@@ -146,13 +147,26 @@ function App() {
       input.addEventListener('change', updatePreview)
       return () => { input.removeEventListener('change', updatePreview); preview.remove() }
     })
-    return () => cleanups.forEach((cleanup) => cleanup())
+    const fieldGrid = document.querySelector<HTMLElement>('.form-page form .field-grid')
+    const reviewerField = document.createElement('label')
+    reviewerField.className = 'field full reviewer-field'
+    reviewerField.innerHTML = '<span>Task reviewer <b>*</b></span><select name="reviewerEmail" required><option value="">Select a reviewer</option><option value="catherine@lumeomarketing.com">Catherine</option><option value="mckenzie@lumeomarketing.com">Mckenzie</option><option value="ariel@lumeomarketing.com">Ariel</option><option value="tommyads18@gmail.com">Dr Awagu</option></select>'
+    fieldGrid?.appendChild(reviewerField)
+    return () => { cleanups.forEach((cleanup) => cleanup()); reviewerField.remove() }
   }, [activeView, type])
 
   async function toggleTask(id: number) {
     const task = tasks.find((item) => item.id === id)
     if (!task) return
-    const status = task.status === 'Pending' ? 'Completed' : 'Pending'
+    if (task.status === 'Pending') {
+      setCompletionTask(task)
+      return
+    }
+    if (task.status === 'Under review') {
+      setNotice('This task is waiting for the reviewer to approve it or request a correction.')
+      return
+    }
+    const status: TaskStatus = 'Pending'
     const response = await fetch(`/api/tasks/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) })
     if (!response.ok) return setNotice('Could not update this task.')
     const updated = normalizeTask(await response.json())
@@ -161,7 +175,13 @@ function App() {
 
   async function submitTask(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (submittingRef.current) return
+    submittingRef.current = true
     const form = event.currentTarget
+    const submitButton = form.querySelector<HTMLButtonElement>('button[type="submit"]')
+    submitButton?.setAttribute('aria-busy', 'true')
+    submitButton?.setAttribute('aria-label', 'Submitting request')
+    if (submitButton) submitButton.disabled = true
     const data = new FormData(form)
     const title = String(data.get('projectTitle') || 'Untitled task')
     const brand = String(data.get('brand') || brands[0])
@@ -172,25 +192,32 @@ function App() {
     const formattedDate = date ? new Date(`${date}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : 'Date to be confirmed'
     data.set('type', type)
     data.set('submittedBy', userName)
-    let response: Response
     try {
-      response = await fetch('/api/tasks', { method: 'POST', body: data })
+      const response = await fetch('/api/tasks', { method: 'POST', body: data })
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ error: `Request failed (${response.status})` }))
+        setNotice(error.error || 'Could not save the task.')
+        return
+      }
+      const savedTask = normalizeTask(await response.json())
+      setTasks((current) => [savedTask, ...current.filter((task) => task.id !== savedTask.id)])
+      setSubmissionSuccess(true)
+      form.reset()
+      window.setTimeout(() => setNotice(''), 4500)
+      // Integration boundary: send this payload to your GHL webhook and email service.
+      const fields = Object.fromEntries([...data.entries()].filter(([, value]) => typeof value === 'string')) as Record<string, string>
+      void submitToGhlAndEmail({ ...fields, type, submittedBy: userName, attachments })
     } catch {
-      return setNotice('The task service is unavailable. Please try again in a moment.')
+      setNotice('The task service is unavailable. Please try again in a moment.')
+    } finally {
+      submittingRef.current = false
+      submitButton?.removeAttribute('aria-busy')
+      submitButton?.removeAttribute('aria-label')
+      if (submitButton) submitButton.disabled = false
     }
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: `Request failed (${response.status})` }))
-      return setNotice(error.error || 'Could not save the task.')
-    }
-    const savedTask = normalizeTask(await response.json())
-    setTasks((current) => [savedTask, ...current.filter((task) => task.id !== savedTask.id)])
-    setSubmissionSuccess(true)
-    form.reset()
-    window.setTimeout(() => setNotice(''), 4500)
-    // Integration boundary: send this payload to your GHL webhook and email service.
-    const fields = Object.fromEntries([...data.entries()].filter(([, value]) => typeof value === 'string')) as Record<string, string>
-    void submitToGhlAndEmail({ ...fields, type, submittedBy: userName, attachments })
   }
+
+  if (reviewToken) return <ReviewPage token={reviewToken} />
 
   return (
     <div className="app-shell">
@@ -211,6 +238,7 @@ function App() {
       </main>
       {notice && <div className="toast"><CheckCircle2 size={19} /><span>{notice}</span><button onClick={() => setNotice('')}><X size={16} /></button></div>}
       {submissionSuccess && <div className="success-overlay" role="dialog" aria-modal="true" aria-labelledby="submission-success-title"><div className="success-modal"><div className="success-icon"><Check size={24} /></div><p className="kicker">Lumeo Task</p><h2 id="submission-success-title">Task submitted successfully for review</h2><p>Your request has been saved and sent to the Lumeo team.</p><button className="primary-button" onClick={() => { setSubmissionSuccess(false); setActiveView('overview') }}>Back to tasks</button></div></div>}
+      {completionTask && <CompletionModal task={completionTask} onClose={() => setCompletionTask(null)} onSent={(result) => { const updated = normalizeTask(result as ApiTask); setTasks((current) => current.map((task) => task.id === updated.id ? updated : task)); setCompletionTask(null); setNotice(`Sent to ${updated.reviewerName || 'the reviewer'} for approval.`) }} />}
     </div>
   )
 }
@@ -232,7 +260,7 @@ function TaskRow({ task, toggleTask, onOpen }: { task: Task; toggleTask: (id: nu
 
 function TaskDetail({ task, toggleTask, onBack }: { task: Task; toggleTask: (id: number) => Promise<void>; onBack: () => void }) {
   const details: Array<[string, string | undefined]> = [
-    ['Project title', task.title], ['Request type', task.type], ['Brand', task.brand], ['First submission date', task.firstSubmissionDate || task.dueDate], ['Project description', task.description], ['Objective / goal', task.objective], ['Script / copy / information / details', task.script], ['Copy / information / details', task.copy], ['Print size', task.size], ['First review date', task.firstReviewDate], ['Visual reference', task.visualReference], ['Images / visual elements', task.visualElements], ['Pages, features, or update scope', task.scope], ['Target keywords', task.keywords], ['Technical notes', task.technicalNotes],
+    ['Project title', task.title], ['Request type', task.type], ['Brand', task.brand], ['Reviewer', task.reviewerName], ['Latest reviewer correction', task.latestReview?.correctionComment], ['First submission date', task.firstSubmissionDate || task.dueDate], ['Project description', task.description], ['Objective / goal', task.objective], ['Script / copy / information / details', task.script], ['Copy / information / details', task.copy], ['Print size', task.size], ['First review date', task.firstReviewDate], ['Visual reference', task.visualReference], ['Images / visual elements', task.visualElements], ['Pages, features, or update scope', task.scope], ['Target keywords', task.keywords], ['Technical notes', task.technicalNotes],
   ]
   return <section className="page detail-page"><div className="detail-top"><button className="back-link" onClick={onBack}><ArrowUpRight size={16} /> Back to requests</button><span className={`status-pill ${task.status.toLowerCase()}`}><i />{task.status}</span></div><div className="detail-heading"><div><p className="kicker">{task.type} / {task.brand}</p><h1>{task.title}</h1><p className="subheading">Submitted by {task.submittedBy || 'Unknown user'} · {task.dueDate}</p></div><button className={`complete-button ${task.status === 'Completed' ? 'done' : ''}`} onClick={() => void toggleTask(task.id)}>{task.status === 'Completed' ? <><Check size={15} /> Mark pending</> : 'Set completed'}</button></div><div className="detail-grid"><div className="detail-card"><div className="detail-card-heading"><FileText size={18} /><div><h2>Request information</h2><p>Every field from the submitted form.</p></div></div><div className="detail-fields">{details.map(([label, value]) => <div className="detail-field" key={label}><span>{label}</span><p>{value?.trim() || 'Not provided'}</p></div>)}</div></div><aside className="detail-sidebar"><div className="detail-card metadata-card"><h2>Task timeline</h2><div className="timeline-row"><CalendarDays size={15} /><span>First submission<strong>{task.firstSubmissionDate || 'Not provided'}</strong></span></div><div className="timeline-row"><Clock3 size={15} /><span>First review<strong>{task.firstReviewDate || 'Not scheduled'}</strong></span></div><div className="timeline-row"><Zap size={15} /><span>Created<strong>{task.createdAt ? new Date(task.createdAt).toLocaleDateString() : 'Local task'}</strong></span></div></div><div className="detail-card attachments-card"><div className="detail-card-heading"><Paperclip size={18} /><div><h2>Attachments</h2><p>{task.attachments?.length || 0} files saved locally.</p></div></div>{task.attachments?.length ? task.attachments.map((file) => <a key={file.id} href={`/api/task-files/${file.id}/download`} download={file.originalName} className="attachment-link"><FileText size={15} /><span>{file.originalName}<small>{Math.ceil(file.size / 1024)} KB · Download</small></span><ArrowUpRight size={14} /></a>) : <p className="empty-attachments">No files attached.</p>}</div></aside></div></section>
 }

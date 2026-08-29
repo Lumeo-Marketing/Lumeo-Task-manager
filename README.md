@@ -15,6 +15,10 @@ For the API only, use `npm run dev:api`. The local API provides:
 
 - `GET /api/tasks`
 - `POST /api/tasks` with multipart form fields and `files[]`
+- `POST /api/tasks/:id/review` with a review `message` and one completed-work `file`
+- `GET /api/reviews/:token`
+- `GET /api/reviews/:token/file`
+- `POST /api/reviews/:token/respond` with an `approve` or `correction` decision
 - `PATCH /api/tasks/:id/status` with `{ "status": "Pending" }` or `{ "status": "Completed" }`
 - `GET /api/health`
 - `GET /api/brands/:brand/assets`
@@ -42,12 +46,15 @@ Set these environment variables when wiring production services:
 - `VITE_EMAIL_ENDPOINT`: Your server-side email endpoint. Keep provider credentials on the server.
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`: Server-side SMTP credentials for request notifications.
 - `SMTP_FROM`: Optional sender address.
+- `APP_BASE_URL`: Public application URL used to build the reviewer links in email (for example, `https://tasks.example.com`).
 
 For SendGrid, use `smtp.sendgrid.net`, port `587`, username `apikey`, and a newly generated SendGrid API key as `SMTP_PASS`. The sender address must be verified in SendGrid. The local `.env` contains a placeholder and is ignored by git.
 
 The integration boundary is `submitToGhlAndEmail` in `src/main.tsx`. GHL/email forwarding is secondary and does not control local success: the app saves the submission to SQLite first, then can forward the payload. If GHL is unavailable, the local task remains saved.
 
 Email routing is handled by the backend after the local save. Video, Online Poster / Flyer, and Print Poster / Flyer go to `stanley@lumeomarketing.com`. Web development, SEO, and Website update go to `godwin@lumeomarketing.com`. Emails include all submitted fields and uploaded files.
+
+Each task also stores a selected reviewer. When the handler sends completed work, the reviewer receives the delivery message, attached file, and a private review link. Approval completes the task and notifies the type-based handler. A correction returns the task to Pending, emails the correction to the handler, and allows a revised delivery to be sent for review.
 
 The logged-in display name can be provided with `?name=Alex` or `?contactName=Alex` on the embed URL. A GHL parent page can also send `{ name: "Alex" }`, `{ contactName: "Alex" }`, or `{ user: { name: "Alex" } }` with `postMessage` after the iframe loads.
 

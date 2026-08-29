@@ -109,3 +109,74 @@ body { font-size: 15px; }
 }
 .sidebar-v2-location .hl_wrapper.notification-banner-wrapper {
     padding-top: 3rem !important;}
+
+.status-pill.under.review { color: #356b85; background: #dceef6; }
+.status-pill.under.review i { background: #4a8ba9; }
+.task-row:has(.status-pill.under.review) .complete-button, .detail-page:has(.status-pill.under.review) .complete-button { pointer-events: none; font-size: 0; border-color: #a9cad9; background: #edf7fb; color: #356b85; }
+.task-row:has(.status-pill.under.review) .complete-button::after, .detail-page:has(.status-pill.under.review) .complete-button::after { content: 'Under review'; font-size: 13px; }
+.completion-overlay { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 22px; background: rgba(36,35,33,.5); }
+.completion-modal { position: relative; width: min(510px, 100%); padding: 32px; border: 1px solid var(--line); border-radius: 15px; background: #fffdf9; box-shadow: 0 25px 75px rgba(36,35,33,.28); }
+.completion-modal h2 { margin: 0; font-size: 24px; letter-spacing: -.6px; }
+.modal-close { position: absolute; top: 18px; right: 18px; display: grid; place-items: center; border: 0; background: transparent; color: #8b847b; }
+.modal-intro { margin: 11px 0 24px; color: #777168; font-size: 13px; line-height: 1.65; }
+.modal-field { display: grid; gap: 8px; }
+.modal-field span { color: #5e5952; font-size: 13px; font-weight: 700; }
+.modal-field b { color: #df7459; }
+.modal-field input, .correction-form textarea { width: 100%; padding: 12px; border: 1px solid #e5ded4; border-radius: 7px; background: #fffcf8; color: var(--ink); outline: none; }
+.modal-field input:focus, .correction-form textarea:focus { border-color: #c6a52a; box-shadow: 0 0 0 3px #fff3b9; }
+.modal-upload { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 17px; border: 1px dashed #c9beaf; border-radius: 8px; color: #a17d18; cursor: pointer; }
+.modal-upload span { display: grid; gap: 4px; color: #514b43; font-size: 13px; font-weight: 700; }
+.modal-upload small { color: #938b80; font-size: 11px; font-weight: 400; }
+.modal-upload input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.modal-file { display: flex; align-items: center; gap: 8px; margin-top: 9px; color: #686158; font-size: 12px; }
+.modal-error { margin: 12px 0 0; color: #b44937; font-size: 12px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 24px; }
+.inline-spinner { width: 15px; height: 15px; border: 2px solid rgba(255,255,255,.35); border-top-color: currentColor; border-radius: 50%; animation: button-spin .7s linear infinite; }
+.inline-spinner.dark { display: inline-block; margin-right: 8px; color: #242321; border-color: #d5cec4; border-top-color: #242321; vertical-align: middle; }
+
+.review-page { min-height: 100vh; display: grid; place-items: center; padding: 34px 18px; background: #f6f1e9; }
+.review-card { width: min(670px, 100%); padding: 38px; border: 1px solid var(--line); border-radius: 16px; background: #fffdf9; box-shadow: 0 20px 60px rgba(36,35,33,.12); }
+.review-card h1 { margin: 0; font-size: clamp(28px, 5vw, 40px); letter-spacing: -1.2px; }
+.review-brand { margin: 8px 0 25px; color: #8b847b; font-size: 13px; }
+.review-message { display: flex; align-items: flex-start; gap: 12px; padding: 18px; border-radius: 9px; background: #fff9df; color: #9b771b; }
+.review-message p { margin: 0; color: #5f5540; font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
+.review-file { display: flex; align-items: center; gap: 12px; margin-top: 13px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 9px; color: #514b43; text-decoration: none; }
+.review-file > svg { color: #b18b20; }
+.review-file span { display: grid; gap: 4px; font-size: 13px; font-weight: 700; }
+.review-file small { color: #8b847b; font-size: 11px; font-weight: 400; }
+.review-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 26px; }
+.approve-button, .correction-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 13px; border-radius: 7px; font-size: 13px; font-weight: 700; }
+.approve-button { border: 0; background: #397c59; color: white; }
+.correction-button { border: 1px solid #e1a393; background: #fff5f1; color: #a84f3a; }
+.correction-form { display: grid; gap: 13px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
+.correction-form label { display: grid; gap: 8px; color: #5e5952; font-size: 13px; font-weight: 700; }
+.correction-form b { color: #df7459; }
+.correction-form .primary-button { justify-self: end; }
+.review-result { display: flex; gap: 12px; align-items: flex-start; margin-top: 24px; padding: 18px; border-radius: 9px; background: #fff2c9; color: #9b7416; }
+.review-result.approved { background: #dff2e7; color: #397c59; }
+.review-result strong { font-size: 14px; }
+.review-result p { margin: 5px 0 0; color: #686158; font-size: 12px; }
+.review-loading { color: #686158; font-size: 14px; }
+
+@media (max-width: 680px) {
+  .completion-modal, .review-card { padding: 25px 20px; }
+  .modal-actions, .review-actions { grid-template-columns: 1fr; }
+  .modal-actions { display: grid; }
+  .modal-actions button { width: 100%; }
+}
+
+/* Keep attachments in the natural form flow so they are seen before submission. */
+.form-page .form-layout { grid-template-columns: minmax(0, 1fr); }
+.form-page .form-aside { grid-template-columns: minmax(0, 1fr); gap: 0; }
+.form-page .upload-card { display: grid; grid-template-columns: 42px minmax(0, 1fr) minmax(300px, .8fr); grid-template-areas: 'icon title upload' 'icon copy upload'; align-items: center; column-gap: 15px; padding: 22px 24px; }
+.form-page .upload-card .upload-icon { grid-area: icon; margin: 0; }
+.form-page .upload-card h3 { grid-area: title; align-self: end; margin: 0 0 4px; }
+.form-page .upload-card > p { grid-area: copy; align-self: start; margin: 0; }
+.form-page .upload-card > .upload-zone, .form-page .upload-card > .file-upload-wrap { grid-area: upload; min-height: 104px; }
+.form-page .upload-card > .file-preview-box { grid-column: 1 / -1; margin-top: 16px; }
+.form-page .form-footer { padding-top: 3px; }
+
+@media (max-width: 760px) {
+  .form-page .upload-card { grid-template-columns: 42px minmax(0, 1fr); grid-template-areas: 'icon title' 'icon copy' 'upload upload'; }
+  .form-page .upload-card > .upload-zone, .form-page .upload-card > .file-upload-wrap { margin-top: 18px; }
+}
