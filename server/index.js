@@ -142,7 +142,7 @@ function mailTransporter() {
 }
 
 function mailSender() {
-  return { name: 'Lumeo Task System', address: process.env.SMTP_FROM || process.env.SMTP_USER }
+  return { name: 'Lumeoe Task System', address: process.env.SMTP_FROM || process.env.SMTP_USER }
 }
 
 function publicBaseUrl(request) {
