@@ -180,3 +180,6 @@ body { font-size: 15px; }
   .form-page .upload-card { grid-template-columns: 42px minmax(0, 1fr); grid-template-areas: 'icon title' 'icon copy' 'upload upload'; }
   .form-page .upload-card > .upload-zone, .form-page .upload-card > .file-upload-wrap { margin-top: 18px; }
 }
+.sidebar-v2-location .hl_wrapper.notification-banner-wrapper {
+    padding-top: 0 !important;
+}

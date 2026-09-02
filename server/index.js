@@ -35,6 +35,7 @@ database.exec(`
     submittedBy TEXT NOT NULL,
     reviewerName TEXT,
     reviewerEmail TEXT,
+    requireAiContent TEXT NOT NULL DEFAULT 'No',
     status TEXT NOT NULL DEFAULT 'Pending',
     createdAt TEXT NOT NULL,
     completedAt TEXT
@@ -81,6 +82,7 @@ database.exec(`
 try { database.exec('ALTER TABLE task_files ADD COLUMN data BLOB') } catch {}
 try { database.exec('ALTER TABLE tasks ADD COLUMN reviewerName TEXT') } catch {}
 try { database.exec('ALTER TABLE tasks ADD COLUMN reviewerEmail TEXT') } catch {}
+try { database.exec("ALTER TABLE tasks ADD COLUMN requireAiContent TEXT NOT NULL DEFAULT 'No'") } catch {}
 
 database.transaction(() => {
   const nonProductionTasks = database.prepare("SELECT id FROM tasks WHERE submittedBy IN ('Demo user', 'Workflow Test')").all()
@@ -200,6 +202,7 @@ async function notifyTask(taskId) {
     ['Project title', task.title],
     ['Request type', task.type],
     ['Brand', task.brand],
+    ['REQUIRE AI CONTENT', task.requireAiContent],
     ['First submission date', task.firstSubmissionDate],
     ['Project description', task.description],
     ['Objective / goal', task.objective],
@@ -281,7 +284,8 @@ app.post('/api/tasks', upload.array('files', 10), async (request, response) => {
   if (!reviewerName) return response.status(400).json({ error: 'Please select a valid reviewer' })
 
   const createdAt = new Date().toISOString()
-  const result = database.prepare(`INSERT INTO tasks (title, type, brand, description, objective, script, copy, size, scope, keywords, visualReference, visualElements, technicalNotes, firstSubmissionDate, firstReviewDate, submittedBy, reviewerName, reviewerEmail, status, createdAt) VALUES (@title, @type, @brand, @description, @objective, @script, @copy, @size, @scope, @keywords, @visualReference, @visualElements, @technicalNotes, @firstSubmissionDate, @firstReviewDate, @submittedBy, @reviewerName, @reviewerEmail, 'Pending', @createdAt)`).run({
+  const requireAiContent = String(fields.requireAiContent || 'No').toLowerCase() === 'yes' ? 'Yes' : 'No'
+  const result = database.prepare(`INSERT INTO tasks (title, type, brand, description, objective, script, copy, size, scope, keywords, visualReference, visualElements, technicalNotes, firstSubmissionDate, firstReviewDate, submittedBy, reviewerName, reviewerEmail, requireAiContent, status, createdAt) VALUES (@title, @type, @brand, @description, @objective, @script, @copy, @size, @scope, @keywords, @visualReference, @visualElements, @technicalNotes, @firstSubmissionDate, @firstReviewDate, @submittedBy, @reviewerName, @reviewerEmail, @requireAiContent, 'Pending', @createdAt)`).run({
     title: fields.projectTitle,
     type: fields.type,
     brand: fields.brand,
@@ -300,6 +304,7 @@ app.post('/api/tasks', upload.array('files', 10), async (request, response) => {
     submittedBy: fields.submittedBy,
     reviewerName,
     reviewerEmail,
+    requireAiContent,
     createdAt,
   })
   const taskId = Number(result.lastInsertRowid)
