@@ -12,7 +12,7 @@ import './detail.css'
 import CompletionModal from './CompletionModal'
 import ReviewPage from './ReviewPage'
 
-type TaskType = 'Video' | 'Online Poster / Flyer' | 'Print Poster / Flyer' | 'Web development' | 'SEO' | 'Website update'
+type TaskType = 'Video' | 'Online Poster / Flyer' | 'Print Poster / Flyer' | 'Social Media Post' | 'Web development' | 'SEO' | 'Website update'
 type TaskStatus = 'Pending' | 'Under review' | 'Completed'
 
 type Task = {
@@ -50,7 +50,7 @@ type BrandAsset = { id: number; brand: string; originalName: string; mimeType: s
 
 type AppView = 'overview' | 'submit' | 'mytasks' | 'library' | 'detail'
 
-const taskTypes: TaskType[] = ['Video', 'Online Poster / Flyer', 'Print Poster / Flyer', 'Web development', 'SEO', 'Website update']
+const taskTypes: TaskType[] = ['Video', 'Online Poster / Flyer', 'Print Poster / Flyer', 'Social Media Post', 'Web development', 'SEO', 'Website update']
 const brands = [
   'Blue Hippo HVAC & Restaurant Repair',
   'HerSpace Mental Wellness',
@@ -144,19 +144,56 @@ function App() {
       if (!input.value || input.value === '2026-08-28') input.value = today
     })
     const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('.upload-zone input[type="file"]'))
+    const fileAccumulator = new Map<HTMLInputElement, File[]>()
     const cleanups = inputs.map((input) => {
       const zone = input.closest('.upload-zone')
       if (!zone) return () => {}
       input.name = 'files'
+      input.multiple = true
+      input.setAttribute('multiple', 'multiple')
       const preview = document.createElement('div')
       preview.className = 'file-preview-box'
       zone.parentElement?.appendChild(preview)
-      const updatePreview = () => {
-        const files = Array.from(input.files || [])
-        preview.innerHTML = files.length ? `<div class="file-preview-heading"><strong>Selected files</strong><span>${files.length}</span></div><div class="file-preview-list">${files.map((file) => `<div class="file-preview-item"><span>${file.name}<small>${Math.ceil(file.size / 1024)} KB</small></span></div>`).join('')}</div>` : ''
+
+      const syncInputFiles = (files: File[]) => {
+        fileAccumulator.set(input, files)
+        const transfer = new DataTransfer()
+        files.forEach((file) => transfer.items.add(file))
+        input.files = transfer.files
       }
-      input.addEventListener('change', updatePreview)
-      return () => { input.removeEventListener('change', updatePreview); preview.remove() }
+
+      const updatePreview = () => {
+        const existing = fileAccumulator.get(input) || Array.from(input.files || [])
+        const fileItems = existing.map((file, index) => `<div class="file-preview-item"><span>${file.name}<small>${Math.ceil(file.size / 1024)} KB</small></span><button type="button" class="file-remove-button" data-index="${index}" aria-label="Remove ${file.name}">Remove</button></div>`).join('')
+        preview.innerHTML = existing.length ? `<div class="file-preview-heading"><strong>Selected files</strong><span>${existing.length}</span></div><div class="file-preview-list">${fileItems}</div>` : ''
+
+        preview.querySelectorAll<HTMLButtonElement>('.file-remove-button').forEach((button) => {
+          button.addEventListener('click', () => {
+            const nextFiles = (fileAccumulator.get(input) || Array.from(input.files || [])).filter((_, fileIndex) => fileIndex !== Number(button.dataset.index))
+            syncInputFiles(nextFiles)
+            updatePreview()
+          })
+        })
+      }
+
+      const onChange = () => {
+        const current = Array.from(input.files || [])
+        const previous = fileAccumulator.get(input) || []
+        const merged = [...previous, ...current]
+        const deduped = merged.filter((file, index, list) => list.findIndex((candidate) => candidate.name === file.name && candidate.size === file.size && candidate.lastModified === file.lastModified) === index)
+        syncInputFiles(deduped)
+        updatePreview()
+        input.value = ''
+      }
+
+      input.addEventListener('change', onChange)
+      fileAccumulator.set(input, Array.from(input.files || []))
+      updatePreview()
+      return () => {
+        input.removeEventListener('change', onChange)
+        fileAccumulator.delete(input)
+        preview.remove()
+      }
     })
     const fieldGrid = document.querySelector<HTMLElement>('.form-page form .field-grid')
     const aiContentField = document.createElement('label')
@@ -175,7 +212,11 @@ function App() {
     aiContentButtons.forEach((button) => button.addEventListener('click', () => setAiContent(button.dataset.value || 'No')))
     const reviewerField = document.createElement('label')
     reviewerField.className = 'field full reviewer-field'
-    reviewerField.innerHTML = '<span>Task reviewer <b>*</b></span><select name="reviewerEmail" required><option value="">Select a reviewer</option><option value="catherine@lumeomarketing.com">Catherine</option><option value="mckenzie@lumeomarketing.com">Mckenzie</option><option value="ariel@lumeomarketing.com">Ariel</option><option value="tommyads18@gmail.com">Dr Awagu</option></select>'
+    reviewerField.innerHTML = '<span>Task reviewer <b>*</b></span><select name="reviewerEmail" required><option value="">Select a reviewer</option><option value="stanley@lumeomarketing.com">Stanley</option><option value="catherine@lumeomarketing.com">Catherine</option><option value="mckenzie@lumeomarketing.com">Mckenzie</option><option value="ariel@lumeomarketing.com">Ariel</option><option value="samuel@callbluehippo.com">Samuel</option><option value="awagu@twinklehealthcare.com">Nnena</option><option value="slyawagu@gmail.com">Dr Awagu</option></select>'
+    const reviewerSelect = reviewerField.querySelector<HTMLSelectElement>('select[name="reviewerEmail"]')
+    if (reviewerSelect) {
+      reviewerSelect.value = type === 'Social Media Post' ? 'stanley@lumeomarketing.com' : reviewerSelect.value || ''
+    }
     fieldGrid?.appendChild(aiContentField)
     fieldGrid?.appendChild(reviewerField)
     return () => { cleanups.forEach((cleanup) => cleanup()); aiContentField.remove(); reviewerField.remove() }
@@ -213,8 +254,8 @@ function App() {
     const brand = String(data.get('brand') || brands[0])
     const description = String(data.get('description') || '')
     const date = String(data.get('firstSubmissionDate') || '')
-    const fileInput = form.querySelector<HTMLInputElement>('input[type="file"]')
-    const attachments = Array.from(fileInput?.files ?? []).map((file) => file.name).join(', ')
+    const fileInputs = Array.from(form.querySelectorAll<HTMLInputElement>('input[type="file"]'))
+    const attachments = fileInputs.flatMap((input) => Array.from(input.files ?? [])).map((file) => file.name).join(', ')
     const formattedDate = date ? new Date(`${date}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : 'Date to be confirmed'
     data.set('type', type)
     data.set('submittedBy', userName)
@@ -283,8 +324,8 @@ function Overview({ tasks, allTasks, statusFilter, setStatusFilter, toggleTask, 
 }
 
 function TaskRow({ task, toggleTask, onOpen }: { task: Task; toggleTask: (id: number) => void; onOpen: (id: number) => void }) {
-  const typeIcon = task.type === 'Video' ? <Video size={18} /> : task.type.includes('Poster') ? <ImagePlus size={18} /> : task.type === 'Web development' ? <BriefcaseBusiness size={18} /> : <FileText size={18} />
-  return <article className={`task-row ${task.status === 'Completed' ? 'is-complete' : ''}`} onClick={() => onOpen(task.id)} tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') onOpen(task.id) }}><div className={`task-type-icon ${task.type === 'Video' ? 'video' : task.type.includes('Poster') ? 'poster' : 'web'}`}>{typeIcon}</div><div className="task-main"><div className="task-title-line"><h3>{task.title}</h3><span className={`status-pill ${task.status.toLowerCase()}`}><i />{task.status}</span></div><p>{task.description}</p><div className="task-meta"><span className="brand-label"><i />{task.brand}</span><span><Paperclip size={13} /> {task.files} files</span><span><CalendarDays size={13} /> Due {task.dueDate}</span></div></div><button className={`complete-button ${task.status === 'Completed' ? 'done' : ''}`} onClick={(event) => { event.stopPropagation(); void toggleTask(task.id) }}>{task.status === 'Completed' ? <><Check size={15} /> Completed</> : 'Set completed'}</button><button className="view-details-button" onClick={(event) => { event.stopPropagation(); onOpen(task.id) }}>View details</button><button className="more-button" aria-label="Open task details" onClick={(event) => { event.stopPropagation(); onOpen(task.id) }}><ArrowUpRight size={19} /></button></article>
+  const typeIcon = task.type === 'Video' ? <Video size={18} /> : task.type.includes('Poster') || task.type === 'Social Media Post' ? <ImagePlus size={18} /> : task.type === 'Web development' ? <BriefcaseBusiness size={18} /> : <FileText size={18} />
+  return <article className={`task-row ${task.status === 'Completed' ? 'is-complete' : ''}`} onClick={() => onOpen(task.id)} tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') onOpen(task.id) }}><div className={`task-type-icon ${task.type === 'Video' ? 'video' : task.type.includes('Poster') || task.type === 'Social Media Post' ? 'poster' : 'web'}`}>{typeIcon}</div><div className="task-main"><div className="task-title-line"><h3>{task.title}</h3><span className={`status-pill ${task.status.toLowerCase()}`}><i />{task.status}</span></div><p>{task.description}</p><div className="task-meta"><span className="brand-label"><i />{task.brand}</span><span><Paperclip size={13} /> {task.files} files</span><span><CalendarDays size={13} /> Due {task.dueDate}</span></div></div><button className={`complete-button ${task.status === 'Completed' ? 'done' : ''}`} onClick={(event) => { event.stopPropagation(); void toggleTask(task.id) }}>{task.status === 'Completed' ? <><Check size={15} /> Completed</> : 'Set completed'}</button><button className="view-details-button" onClick={(event) => { event.stopPropagation(); onOpen(task.id) }}>View details</button><button className="more-button" aria-label="Open task details" onClick={(event) => { event.stopPropagation(); onOpen(task.id) }}><ArrowUpRight size={19} /></button></article>
 }
 
 function TaskDetail({ task, toggleTask, onBack }: { task: Task; toggleTask: (id: number) => Promise<void>; onBack: () => void }) {
@@ -319,7 +360,26 @@ function BrandLibrary({ onBack }: { onBack: () => void }) {
 
 function FileUpload({ hint = 'PNG, JPG, PDF up to 25 MB' }: { hint?: string }) {
   const [files, setFiles] = useState<File[]>([])
-  return <div className="file-upload-wrap"><label className="upload-zone"><Paperclip size={17} /><span>{files.length ? 'Add more files' : <>Drop files here or <strong>browse</strong></>}</span><small>{hint}</small><input type="file" name="files" multiple onChange={(event) => setFiles(Array.from(event.target.files || []))} /></label>{files.length > 0 && <div className="file-preview-box" aria-live="polite"><div className="file-preview-heading"><strong>Selected files</strong><span>{files.length}</span></div><div className="file-preview-list">{files.map((file) => <div className="file-preview-item" key={`${file.name}-${file.size}`}><FileText size={15} /><span>{file.name}<small>{Math.ceil(file.size / 1024)} KB</small></span></div>)}</div></div>}</div>
+  const inputRef = useRef<HTMLInputElement | null>(null)
+
+  const addFiles = (incoming: FileList | File[]) => {
+    const nextFiles = Array.from(incoming)
+    setFiles((current) => {
+      const existingKeys = new Set(current.map((file) => `${file.name}-${file.size}-${file.lastModified}`))
+      const uniqueFiles = nextFiles.filter((file) => !existingKeys.has(`${file.name}-${file.size}-${file.lastModified}`))
+      return [...current, ...uniqueFiles]
+    })
+  }
+
+  useEffect(() => {
+    const input = inputRef.current
+    if (!input) return
+    const transfer = new DataTransfer()
+    files.forEach((file) => transfer.items.add(file))
+    input.files = transfer.files
+  }, [files])
+
+  return <div className="file-upload-wrap"><label className="upload-zone"><Paperclip size={17} /><span>{files.length ? 'Add more files' : <>Drop files here or <strong>browse</strong></>}</span><small>{hint}</small><input ref={inputRef} type="file" name="files" multiple onChange={(event) => { addFiles(event.target.files || []); event.target.value = '' }} /></label>{files.length > 0 && <div className="file-preview-box" aria-live="polite"><div className="file-preview-heading"><strong>Selected files</strong><span>{files.length}</span></div><div className="file-preview-list">{files.map((file, index) => <div className="file-preview-item" key={`${file.name}-${file.size}-${file.lastModified}-${index}`}><FileText size={15} /><span>{file.name}<small>{Math.ceil(file.size / 1024)} KB</small></span><button type="button" className="file-remove-button" aria-label={`Remove ${file.name}`} onClick={() => setFiles((current) => current.filter((_, currentIndex) => currentIndex !== index))}>Remove</button></div>)}</div></div>}</div>
 }
 
 function SubmissionForm({ type, setType, onSubmit, onCancel }: { type: TaskType; setType: (type: TaskType) => void; onSubmit: (event: React.FormEvent<HTMLFormElement>) => void; onCancel: () => void }) {

@@ -102,11 +102,15 @@ const notificationRecipients = {
   creative: 'stanley@lumeomarketing.com',
   digital: 'godwin@lumeomarketing.com',
 }
+const taskSubmissionCc = 'ugbaja@twinklehealthcare.com'
 const reviewers = new Map([
+  ['stanley@lumeomarketing.com', 'Stanley'],
   ['catherine@lumeomarketing.com', 'Catherine'],
   ['mckenzie@lumeomarketing.com', 'Mckenzie'],
   ['ariel@lumeomarketing.com', 'Ariel'],
-  ['tommyads18@gmail.com', 'Dr Awagu'],
+  ['samuel@callbluehippo.com', 'Samuel'],
+  ['awagu@twinklehealthcare.com', 'Nnena'],
+  ['slyawagu@gmail.com', 'Dr Awagu'],
 ])
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -126,6 +130,7 @@ function taskWithFiles(task) {
 }
 
 function recipientFor(type) {
+  if (type === 'Social Media Post') return 'stanley@lumeomarketing.com'
   return ['Web development', 'SEO', 'Update', 'Website update'].includes(type) ? notificationRecipients.digital : notificationRecipients.creative
 }
 
@@ -182,6 +187,7 @@ async function notifyReviewDecision(task, decision, comment = '') {
   await transporter.sendMail({
     from: mailSender(),
     to: recipient,
+    cc: taskSubmissionCc,
     subject: `[Lumeo Task System] ${heading}: ${task.title}`,
     text: detail,
     html: `<div style="font-family:Arial,Helvetica,sans-serif;max-width:620px;margin:auto;padding:28px;"><p style="color:#a17d18;font-size:12px;font-weight:800;letter-spacing:1px;">LUMEO TASK SYSTEM</p><h1 style="font-size:24px;color:#242321;">${heading}</h1><p style="font-size:14px;line-height:1.7;color:#4e4942;">${escapeHtml(detail).replace(/\n/g, '<br>')}</p></div>`,
@@ -225,6 +231,7 @@ async function notifyTask(taskId) {
   await transporter.sendMail({
     from: mailSender(),
     to: recipientFor(task.type),
+    cc: taskSubmissionCc,
     subject: `[Lumeo Task System] ${task.type}: ${task.title}`,
     text,
     html,

@@ -37,7 +37,7 @@ export default function CompletionModal({ task, onClose, onSent }: { task: Compl
       <h2 id="completion-title">Complete “{task.title}”</h2>
       <p className="modal-intro">Send the finished work to <strong>{task.reviewerName || 'the selected reviewer'}</strong>. The task will remain under review until they approve it.</p>
       <label className="modal-field"><span>Message or link <b>*</b></span><input name="message" required placeholder="Add a delivery note or paste the finished-work URL" /></label>
-      <label className="modal-upload"><UploadCloud size={21} /><span>{fileName || 'Choose the completed file'}<small>One file, up to 25 MB</small></span><input name="file" type="file" required onChange={(event) => setFileName(event.target.files?.[0]?.name || '')} /></label>
+      <label className="modal-upload"><UploadCloud size={21} /><span>{fileName || 'Choose the completed file (optional)'}<small>One file, up to 25 MB</small></span><input name="file" type="file" onChange={(event) => setFileName(event.target.files?.[0]?.name || '')} /></label>
       {fileName && <div className="modal-file"><FileText size={15} /> {fileName}</div>}
       {error && <p className="modal-error" role="alert">{error}</p>}
       <div className="modal-actions"><button type="button" className="secondary-button" onClick={onClose} disabled={submitting}>Cancel</button><button type="submit" className="primary-button" disabled={submitting} aria-busy={submitting}>{submitting ? <span className="inline-spinner" /> : <Send size={16} />} {submitting ? 'Sending…' : 'Send to reviewer'}</button></div>

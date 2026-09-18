@@ -11,8 +11,10 @@
 .file-preview-list { display: grid; gap: 6px; }
 .file-preview-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; background: #f6f1e9; color: #4f4941; font-size: 10px; overflow: hidden; }
 .file-preview-item::before { content: 'FILE'; color: #ad8a2d; font-family: 'DM Mono', monospace; font-size: 8px; }
-.file-preview-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-preview-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-preview-item small { display: block; margin-top: 2px; color: #978e83; font-size: 8px; }
+.file-remove-button { border: 1px solid #dec78d; background: #fffdf9; color: #755f1d; border-radius: 999px; padding: 4px 8px; font-size: 9px; font-weight: 700; line-height: 1; }
+.file-remove-button:hover { background: #fff2bf; }
 .success-overlay { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px; background: rgba(36, 35, 33, .42); }
 .success-modal { width: min(440px, 100%); padding: 34px; border: 1px solid #e6dfd4; border-radius: 16px; background: #fffdf9; text-align: center; box-shadow: 0 24px 70px rgba(36,35,33,.24); animation: success-enter .2s ease-out; }
 .success-icon { width: 54px; height: 54px; display: grid; place-items: center; margin: 0 auto 18px; border-radius: 50%; background: #bfe2cf; color: #397c59; }
